@@ -1,0 +1,6 @@
+asyncio
+azure-identity
+datetime
+msgraph-sdk
+msgraph-beta-sdk
+requests

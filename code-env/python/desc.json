@@ -1,0 +1,12 @@
+{
+  "acceptedPythonInterpreters": [
+    "PYTHON38",
+    "PYTHON39",
+    "PYTHON310",
+    "PYTHON311"
+  ],
+  "corePackagesSet": "PANDAS13",
+  "forceConda": false,
+  "installCorePackages": true,
+  "installJupyterSupport": false
+}

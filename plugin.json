@@ -1,0 +1,36 @@
+{
+    "id": "microsoft-graph",
+    "version": "0.0.1",
+    "meta": {
+        "label": "Microsoft Graph API",
+        "description": "Plugin providing python connectors to load data from Microsoft Graph API.",
+        "author": "admin",
+        "icon": "icon-user",
+        "tags": ["Security"],
+        "url": "https://github.com/datarsense/dss-plugin-microsoft-graph",
+        "licenseInfo": "Apache Software License"
+    },
+    "params": [
+        {
+            "name": "tenant_id",
+            "label": "Tenant ID",
+            "type": "STRING",
+            "description": "Entra ID tenant ID",
+            "mandatory": true
+        },
+        {
+            "name": "client_id",
+            "label": "Client ID",
+            "type": "STRING",
+            "description": "Entra ID aplication client ID",
+            "mandatory": true
+        },
+        {
+            "name": "client_secret",
+            "label": "Client secret",
+            "type": "PASSWORD",
+            "description": "Entra ID aplication client secret",
+            "mandatory": true
+        }
+    ]
+}
