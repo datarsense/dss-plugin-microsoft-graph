@@ -42,11 +42,11 @@ async def getPurviewLogs(credentials, queryStartDate, queryEndDate):
   )
 
   # Send Purview query and get query status
-  queryResult = await msgraph_client.security.audit_log.queries.post(request_body)
+  queryResult = await msgraph_client.security.audit_log.queries.with_url('https://graph.microsoft.com/beta/security/auditLog/queries').post(request_body)
   
   # Wait during query exec
   while True:
-    queryStatus = await msgraph_client.security.audit_log.queries.by_audit_log_query_id(queryResult.id).get()
+    queryStatus = await msgraph_client.security.audit_log.queries.by_audit_log_query_id(queryResult.id).with_url('https://graph.microsoft.com/beta/security/auditLog/queries/' + str(queryResult.id)).get()
     print(queryStatus.status)
     if queryStatus.status == AuditLogQueryStatus.Succeeded:
       break
