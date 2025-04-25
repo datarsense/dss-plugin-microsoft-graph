@@ -18,6 +18,14 @@ from dataiku.customrecipe import get_recipe_config, get_plugin_config
 from helpers import raise_if_missing_plugin_parameters, getPurviewLogs, getPurviewLogsRecords
 
 from azure.identity import ClientSecretCredential
+from msgraph_beta import GraphServiceClient
+
+from msgraph_beta.generated.models.security.audit_log_record import AuditLogRecord
+from msgraph_beta.generated.models.security.audit_log_record_type import AuditLogRecordType
+from msgraph_beta.generated.models.security.audit_log_record_type import AuditLogRecordType
+from msgraph_beta.generated.models.security.audit_log_query_status import AuditLogQueryStatus
+from msgraph_beta.generated.models.security.audit_log_record_collection_response import AuditLogRecordCollectionResponse
+
 
 # Retrieve plugin parameters
 plugin_params = get_plugin_config()
@@ -39,7 +47,12 @@ end_datetime_str = get_recipe_config().get('endDateTime')
 end_datetime = dateutil.parser.parse(end_datetime_str) #datetime.datetime.fromisoformat(end_datetime_str)
 
 # Query Purview logs
-query = asyncio.run(getPurviewLogs(purview_credentials, start_datetime, end_datetime))
+record_type_filters = [
+    AuditLogRecordType.AzureActiveDirectory,
+    AuditLogRecordType.AzureActiveDirectoryStsLogon,
+    AuditLogRecordType.AzureActiveDirectoryAccountLogon
+  ]
+query = asyncio.run(getPurviewLogs(purview_credentials, start_datetime, end_datetime, record_type_filters))
 print(query.id)
 
 # Download results
