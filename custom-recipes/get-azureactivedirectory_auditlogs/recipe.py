@@ -18,13 +18,7 @@ from dataiku.customrecipe import get_recipe_config, get_plugin_config
 from helpers import raise_if_missing_plugin_parameters, getPurviewLogs, getPurviewLogsRecords
 
 from azure.identity import ClientSecretCredential
-from msgraph_beta import GraphServiceClient
-
-from msgraph_beta.generated.models.security.audit_log_record import AuditLogRecord
 from msgraph_beta.generated.models.security.audit_log_record_type import AuditLogRecordType
-from msgraph_beta.generated.models.security.audit_log_record_type import AuditLogRecordType
-from msgraph_beta.generated.models.security.audit_log_query_status import AuditLogQueryStatus
-from msgraph_beta.generated.models.security.audit_log_record_collection_response import AuditLogRecordCollectionResponse
 
 
 # Retrieve plugin parameters
