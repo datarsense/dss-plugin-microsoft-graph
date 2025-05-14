@@ -18,6 +18,7 @@ from dataiku.customrecipe import get_recipe_config, get_plugin_config
 from helpers import raise_if_missing_plugin_parameters, getPurviewLogs, getPurviewLogsRecords
 
 from azure.identity import ClientSecretCredential
+from msgraph_beta.generated.models.security.audit_log_record_type import AuditLogRecordType
 
 # Retrieve plugin parameters
 plugin_params = get_plugin_config()
@@ -38,8 +39,63 @@ start_datetime = dateutil.parser.parse(start_datetime_str) #datetime.datetime.fr
 end_datetime_str = get_recipe_config().get('endDateTime')
 end_datetime = dateutil.parser.parse(end_datetime_str) #datetime.datetime.fromisoformat(end_datetime_str)
 
+# Builf query record type filter
+record_type_filters = []
+filterRecordTypes = get_recipe_config().get('filterRecordTypes')
+selectedRecordTypes = get_recipe_config().get('selectedRecordTypes')
+
+if filterRecordTypes and "entraAudit" in selectedRecordTypes:
+    record_type_filters = record_type_filters + [
+        AuditLogRecordType.AzureActiveDirectory
+    ]
+
+if filterRecordTypes and "entraSignIn" in selectedRecordTypes:
+    record_type_filters = record_type_filters + [
+        AuditLogRecordType.AzureActiveDirectoryStsLogon,
+        AuditLogRecordType.AzureActiveDirectoryAccountLogon
+    ]
+
+if filterRecordTypes and "sharepoint" in selectedRecordTypes:
+    record_type_filters = record_type_filters + [
+        AuditLogRecordType.SharePoint,
+        AuditLogRecordType.SharePointAppPermissionOperation,
+        AuditLogRecordType.SharePointCommentOperation,
+        AuditLogRecordType.SharePointContentTypeOperation,
+        AuditLogRecordType.SharePointFieldOperation,
+        AuditLogRecordType.SharePointFileOperation,
+        AuditLogRecordType.SharePointListItemOperation,
+        AuditLogRecordType.SharePointListOperation,
+        AuditLogRecordType.SharePointSearch,
+        AuditLogRecordType.SharePointSharingOperation,
+        AuditLogRecordType.OneDrive
+    ]
+
+if filterRecordTypes and "exchange" in selectedRecordTypes:
+    record_type_filters = record_type_filters + [
+        AuditLogRecordType.ExchangeAdmin,
+        AuditLogRecordType.ExchangeAggregatedOperation,
+        AuditLogRecordType.ExchangeItem,
+        AuditLogRecordType.ExchangeItemAggregated,
+        AuditLogRecordType.ExchangeItemGroup,
+        AuditLogRecordType.ExchangeSearch
+    ]
+
+if filterRecordTypes and "teams" in selectedRecordTypes:
+    record_type_filters = record_type_filters + [
+        AuditLogRecordType.MicrosoftTeams,
+        AuditLogRecordType.MicrosoftTeamsAdmin,
+        AuditLogRecordType.MicrosoftTeamsAnalytics,
+        AuditLogRecordType.MicrosoftTeamsDevice,
+        AuditLogRecordType.MicrosoftTeamsSensitivityLabelAction,
+        AuditLogRecordType.MicrosoftTeamsShifts,
+        AuditLogRecordType.TeamsEasyApprovals,
+        AuditLogRecordType.TeamsHealthcare,
+        AuditLogRecordType.TeamsQuarantineMetadata,
+        AuditLogRecordType.TeamsUpdates
+    ]
+
 # Query Purview logs
-query = asyncio.run(getPurviewLogs(purview_credentials, start_datetime, end_datetime))
+query = asyncio.run(getPurviewLogs(purview_credentials, start_datetime, end_datetime, record_type_filters))
 print(query.id)
 
 # Download results
