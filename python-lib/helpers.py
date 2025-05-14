@@ -1,9 +1,21 @@
 import requests
 import time
 
+from kiota_authentication_azure.azure_identity_authentication_provider import AzureIdentityAuthenticationProvider
 from msgraph_beta import GraphServiceClient
 from msgraph_beta.generated.models.security.audit_log_query import AuditLogQuery
 from msgraph_beta.generated.models.security.audit_log_query_status import AuditLogQueryStatus
+from msgraph_beta.graph_request_adapter import GraphRequestAdapter, options as graph_reqest_options
+from msgraph_core import APIVersion, GraphClientFactory
+
+
+# Create a Microsoft Graph Beta API client
+def getBetaGraphServiceClient(creds, scopes):
+  auth_provider = AzureIdentityAuthenticationProvider(creds, scopes=scopes)
+  beta_http_client = GraphClientFactory.create_with_default_middleware(options=graph_reqest_options, api_version=APIVersion.beta)
+  request_adapter = GraphRequestAdapter(auth_provider, client=beta_http_client)
+  
+  return GraphServiceClient(credentials=creds, request_adapter=request_adapter)
 
 
 # Raise an error if API authentication token is null or contains only blank chars
@@ -19,7 +31,7 @@ def raise_if_missing_plugin_parameters(plugin_params):
 
 
 async def getPurviewLogs(credentials, queryStartDate, queryEndDate, queryRecordTypeFilters = []):
-  msgraph_client = GraphServiceClient(credentials, ['https://graph.microsoft.com/.default'])
+  msgraph_client = getBetaGraphServiceClient(credentials, ['https://graph.microsoft.com/.default'])
 
   request_body = AuditLogQuery(
     odata_type = "#microsoft.graph.security.auditLogQuery",
@@ -30,11 +42,11 @@ async def getPurviewLogs(credentials, queryStartDate, queryEndDate, queryRecordT
   )
 
   # Send Purview query and get query status
-  queryResult = await msgraph_client.security.audit_log.queries.with_url('https://graph.microsoft.com/beta/security/auditLog/queries').post(request_body)
+  queryResult = await msgraph_client.security.audit_log.queries.post(request_body)
   
   # Wait during query exec
   while True:
-    queryStatus = await msgraph_client.security.audit_log.queries.by_audit_log_query_id(queryResult.id).with_url('https://graph.microsoft.com/beta/security/auditLog/queries/' + str(queryResult.id)).get()
+    queryStatus = await msgraph_client.security.audit_log.queries.by_audit_log_query_id(queryResult.id).get()
     print(queryStatus.status)
     if queryStatus.status == AuditLogQueryStatus.Succeeded:
       break
