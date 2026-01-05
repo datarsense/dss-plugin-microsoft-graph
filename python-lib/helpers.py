@@ -100,4 +100,26 @@ def listEntraDevices(credentials, pagination=True):
       except:
         break
 
+  return graph_results
+
+
+def listIntuneManagedDevices(credentials, pagination=True):
+  token_result = credentials.get_token('https://graph.microsoft.com/.default')
+
+  graph_results = []
+  if hasattr(token_result, 'token'):
+    headers = {'Authorization': 'Bearer ' + token_result.token}
+    
+    url = "https://graph.microsoft.com/beta/deviceManagement/managedDevices"
+    while url:
+      try:
+        graph_result = requests.get(url=url, headers=headers).json()
+        graph_results.extend(graph_result['value'])
+        if (pagination == True):
+          url = graph_result['@odata.nextLink']
+        else:
+          url = None
+      except:
+        break
+
   return graph_results  

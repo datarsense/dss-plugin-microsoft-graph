@@ -1,0 +1,13 @@
+{
+    "meta" : {
+        "label": "List Intune managed devices",
+        "description": "Retrieve a list of device objects managed by Microsoft Intune",
+        "icon": "fas fa-desktop"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": []
+}
