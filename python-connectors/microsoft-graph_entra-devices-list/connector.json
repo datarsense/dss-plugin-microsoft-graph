@@ -1,0 +1,13 @@
+{
+    "meta" : {
+        "label": "List Entra ID devices",
+        "description": "Retrieve a list of device objects registered in Microsoft Entra ID tenant",
+        "icon": "fas fa-desktop"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": []
+}
