@@ -122,4 +122,28 @@ def listIntuneManagedDevices(credentials, pagination=True):
       except:
         break
 
-  return graph_results  
+  return graph_results 
+
+
+def listEntraUsersAuthenticationMethods(credentials, pagination=True):
+  token_result = credentials.get_token('https://graph.microsoft.com/.default')
+
+  graph_results = []
+  if hasattr(token_result, 'token'):
+    headers = {'Authorization': 'Bearer ' + token_result.token}
+    
+    url = "https://graph.microsoft.com/v1.0/reports/authenticationMethods/userRegistrationDetails"
+    while url:
+      try:
+        graph_result = requests.get(url=url, headers=headers).json()
+        if 'value' in graph_result:
+          graph_results.extend(graph_result['value'])
+
+        if (pagination == True and '@odata.nextLink' in graph_result):
+          url = graph_result['@odata.nextLink']
+        else:
+          url = None
+      except:
+        break
+
+  return graph_results
