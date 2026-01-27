@@ -80,4 +80,46 @@ def getPurviewLogsRecords(credentials, queryResultId, pagination=True):
   #return await msgraph_client.security.audit_log.queries.by_audit_log_query_id('debfbef5-85a9-4da1-99b1-3b8761023e84').records.get()
   return graph_results
 
-  
+
+def listEntraDevices(credentials, pagination=True):
+  token_result = credentials.get_token('https://graph.microsoft.com/.default')
+
+  graph_results = []
+  if hasattr(token_result, 'token'):
+    headers = {'Authorization': 'Bearer ' + token_result.token}
+    
+    url = "https://graph.microsoft.com/beta/devices"
+    while url:
+      try:
+        graph_result = requests.get(url=url, headers=headers).json()
+        graph_results.extend(graph_result['value'])
+        if (pagination == True):
+          url = graph_result['@odata.nextLink']
+        else:
+          url = None
+      except:
+        break
+
+  return graph_results
+
+
+def listIntuneManagedDevices(credentials, pagination=True):
+  token_result = credentials.get_token('https://graph.microsoft.com/.default')
+
+  graph_results = []
+  if hasattr(token_result, 'token'):
+    headers = {'Authorization': 'Bearer ' + token_result.token}
+    
+    url = "https://graph.microsoft.com/beta/deviceManagement/managedDevices"
+    while url:
+      try:
+        graph_result = requests.get(url=url, headers=headers).json()
+        graph_results.extend(graph_result['value'])
+        if (pagination == True):
+          url = graph_result['@odata.nextLink']
+        else:
+          url = None
+      except:
+        break
+
+  return graph_results  
