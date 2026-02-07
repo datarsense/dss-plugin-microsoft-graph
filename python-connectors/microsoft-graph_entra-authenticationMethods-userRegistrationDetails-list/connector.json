@@ -1,0 +1,13 @@
+{
+    "meta" : {
+        "label": "List authentication methods registered for users",
+        "description": "Get a list of the authentication methods registered for users.",
+        "icon": "fas fa-user"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": []
+}
