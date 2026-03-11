@@ -1,0 +1,48 @@
+{
+    "meta": {
+        "label": "Add members to a Microsoft Entra ID group",
+        "description": "Add members to a Microsoft Entra ID group. A column containing Entra ID users GUIDs are required. Entra ID application used by this plugin has to be owner of the Entra ID group.",
+        "icon": "fas fa-address-book"
+    },
+    "kind": "PYTHON",
+    "inputRoles": [
+        {
+            "name": "main_input",
+            "label": "Input dataset",
+            "description": "Input dataset",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true,
+            "acceptsManagedFolder": false
+        }
+    ],
+    "outputRoles": [
+        {
+            "name": "main_output",
+            "label": "Output dataset",
+            "description": "Output dataset",
+            "arity": "UNARY",
+            "required": true,
+            "acceptsDataset": true,
+            "acceptsManagedFolder": false
+        }
+    ],
+    "params": [
+        {
+            "name": "group_id",
+            "type": "STRING",
+            "label": "Entra ID group GUID",
+            "description": "GUID of the Microsoft Entra ID group",
+            "mandatory": true
+        },
+        {
+            "name": "user_id_column",
+            "label": "Input dataset Entra ID users column",
+            "description":  "Column containing Entra ID user GUIDs",
+            "type": "COLUMN",
+            "columnRole": "main_input",
+            "mandatory": true
+        }
+    ],
+    "resourceKeys": []
+}

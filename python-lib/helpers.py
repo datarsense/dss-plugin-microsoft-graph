@@ -147,3 +147,25 @@ def listEntraUsersAuthenticationMethods(credentials, pagination=True):
         break
 
   return graph_results
+
+
+def addEntraGroupMemberById(access_token, groupId, userId):
+  headers = {'Authorization': 'Bearer ' + access_token}
+  
+  url = f"https://graph.microsoft.com/v1.0/groups/{groupId}/members/$ref"
+  
+  body = {
+    "@odata.id": f"https://graph.microsoft.com/v1.0/directoryObjects/{userId}"
+  }
+  
+  try:
+    graph_result = requests.post(url=url, headers=headers, json=body)
+    if graph_result.status_code == 204:
+      print(f"Successfully added user {userId} to group {groupId}")
+    elif graph_result.status_code == 400:
+      print(f"User {userId} already exists in group {groupId}")
+    else:
+      print(f"Error when trying to add user {userId} to group {groupId}")
+      
+  except:
+    print(f"Error when trying to add user {userId} to group {groupId}")

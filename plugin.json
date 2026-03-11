@@ -1,6 +1,6 @@
 {
     "id": "microsoft-graph",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "meta": {
         "label": "Microsoft Graph API",
         "description": "Plugin providing python connectors to load data from Microsoft Graph API.",
