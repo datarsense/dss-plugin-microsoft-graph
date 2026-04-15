@@ -1,0 +1,20 @@
+{
+    "meta" : {
+        "label": "List Entra ID users",
+        "description": "Get a list of Entra ID users.",
+        "icon": "fas fa-user"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": [
+         {
+            "name": "getAuthenticationMethods",
+            "label": "Get users authentication methods (slow)",
+            "type": "BOOLEAN",
+            "defaultValue": false
+        }
+    ]
+}
