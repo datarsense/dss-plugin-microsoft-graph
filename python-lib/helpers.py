@@ -34,6 +34,68 @@ def raise_if_missing_plugin_parameters(plugin_params):
       raise Exception('Error : OAuth2 application client seccret is missing in plugin settings')
 
 
+# This function wraps around standard requests calls and incorporates several best practices:
+# Automatic Retries: Retries failed requests a configurable number of times.
+# Exponential Backoff: Gradually increases the delay between retries (e.g., 1s, 2s, 4s…) to avoid overwhelming the API.
+# Throttling Awareness: Specifically listens for 429, 503, and 504 status codes.
+# Retry-After Header Support: If the API provides a Retry-After header (common with 429 responses), the function respects this specific delay.
+# Session Management: Utilizes requests.Session() for connection pooling, improving performance for multiple calls to the same host.
+# Clear Logging: Provides informative logs for each retry attempt and error.
+def perform_request_with_retry(method: str, url: str, access_token: str, params: dict = None, json_payload: dict = None, max_retries: int = 5, session: requests.Session = None) -> requests.Response:
+    """
+    Performs an HTTP request with retries for throttling and transient errors.
+    Uses a provided session or creates a new one.
+    """
+    local_session = session or requests.Session()
+    delay = 1 # Initial delay in seconds
+    headers = {'Authorization': 'Bearer ' + access_token}
+
+    for attempt in range(max_retries):
+        try:
+            response = None
+            if method.upper() == "GET":
+                response = local_session.get(url, headers=headers, params=params)
+            elif method.upper() == "POST":
+                response = local_session.post(url, headers=headers, json=json_payload, params=params)
+            elif method.upper() == "PATCH":
+                response = local_session.patch(url, headers=headers, json=json_payload, params=params)
+            elif method.upper() == "DELETE":
+                response = local_session.delete(url, headers=headers, params=params)
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
+
+            if response.status_code in [429, 503, 504]: # Throttling or temporary server issues
+                retry_after = int(response.headers.get("Retry-After", delay))
+                logger.warning(
+                    f"Request to {url} {method} Throttled/Unavailable (Status {response.status_code}). "
+                    f"Retrying in {retry_after}s (Attempt {attempt + 1}/{max_retries})"
+                )
+                time.sleep(retry_after)
+                delay = min(delay * 2, 60) # Exponential backoff, max 60s
+                continue # Retry the loop
+
+            response.raise_for_status() # Raise HTTPError for bad responses (4xx or 5xx) not handled above
+            return response
+
+        except requests.exceptions.RequestException as e: # Catches network errors, timeouts, etc.
+            logger.warning(
+                f"Request to {url} {method} failed: {e} (Attempt {attempt + 1}/{max_retries})"
+            )
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+                delay = min(delay * 2, 60)
+            else:
+                logger.error(
+                    f"Max retries reached for {url} {method}. Last error: {e}"
+                )
+                raise # Re-raise the last exception after max retries
+        finally:
+            if not session and local_session: # If session was created locally, close it
+                local_session.close()
+                
+    raise Exception(f"Request {method} {url} failed after {max_retries} retries without a conclusive response or error.")
+
+
 async def getPurviewLogs(credentials, queryStartDate, queryEndDate, queryRecordTypeFilters = []):
   msgraph_client = getBetaGraphServiceClient(credentials, ['https://graph.microsoft.com/.default'])
 
@@ -173,6 +235,37 @@ def listEntraUsersAuthenticationMethods(credentials, pagination=True):
       except:
         break
 
+  return graph_results
+
+
+# Retrieve a list of authentication methods registered to a user. 
+# The authentication methods are defined by the types derived from the authenticationMethod resource type
+def listEntraUserAuthenticationMethodsDetails(access_token, user_identifier, pagination=True):
+  graph_results = []
+  headers = {'Authorization': 'Bearer ' + access_token}
+  
+  url = f"https://graph.microsoft.com/v1.0/users/{user_identifier}/authentication/methods"
+  # throttlingProtection = True
+  # while throttlingProtection:
+  #   try:
+  #     graph_response = requests.get(url=url, headers=headers)
+  #     if graph_response.status_code == 429:
+  #       h = graph_response.headers
+  #       time.sleep(5)
+
+  #     elif graph_response.status_code == 200:
+  #       graph_results.extend(graph_response.json()['value'])
+  #       throttlingProtection = False
+
+  #     else:
+  #       throttlingProtection = False
+  #     throttlingProtection = False
+  #   except:
+  #     logger.error(f"Unable to retrieve {user_principal_name} authentication methods")
+  #     throttlingProtection = False
+  
+  graph_response = perform_request_with_retry(method="GET", access_token=access_token, url=url)
+  graph_results.extend(graph_response.json()['value'])
   return graph_results
 
 
