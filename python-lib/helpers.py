@@ -1,3 +1,4 @@
+import logging
 import requests
 import time
 
@@ -7,6 +8,9 @@ from msgraph_beta.generated.models.security.audit_log_query import AuditLogQuery
 from msgraph_beta.generated.models.security.audit_log_query_status import AuditLogQueryStatus
 from msgraph_beta.graph_request_adapter import GraphRequestAdapter, options as graph_reqest_options
 from msgraph_core import APIVersion, GraphClientFactory
+
+
+logger = logging.getLogger(__name__)
 
 
 # Create a Microsoft Graph Beta API client
@@ -123,6 +127,29 @@ def listIntuneManagedDevices(credentials, pagination=True):
         break
 
   return graph_results 
+
+
+def listEntraUsers(access_token, page_size=500, page_limit=100000):
+  graph_results = []
+  headers = {'Authorization': 'Bearer ' + access_token}
+  
+  url = "https://graph.microsoft.com/v1.0/users?$select=businessPhones,displayName,givenName,id,jobTitle,mail,mobilePhone,officeLocation,preferredLanguage,surname,userPrincipalName,userType,signInSessionsValidFromDateTime,securityIdentifier,lastPasswordChangeDateTime,externalUserState,createdDateTime,companyName,assignedLicenses,accountEnabled,signInActivity"
+  page = 0
+  while url:
+    try:
+      graph_result = requests.get(url=url, headers=headers).json()
+      if 'value' in graph_result:
+        graph_results.extend(graph_result['value'])
+
+      if ((page < page_limit) and '@odata.nextLink' in graph_result):
+        url = graph_result['@odata.nextLink']
+        page = page + 1
+      else:
+        url = None
+    except:
+      break
+
+  return graph_results
 
 
 def listEntraUsersAuthenticationMethods(credentials, pagination=True):
