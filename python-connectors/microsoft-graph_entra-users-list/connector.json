@@ -9,12 +9,5 @@
     "writable": false,
     "supportAppend": false,
     
-    "params": [
-         {
-            "name": "getAuthenticationMethods",
-            "label": "Get users authentication methods (slow)",
-            "type": "BOOLEAN",
-            "defaultValue": false
-        }
-    ]
+    "params": []
 }

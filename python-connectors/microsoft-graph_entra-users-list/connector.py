@@ -6,7 +6,7 @@ from math import *
 from six.moves import xrange
 from dataiku.connector import Connector
 
-from helpers import raise_if_missing_plugin_parameters, listEntraUsers, listEntraUserAuthenticationMethods
+from helpers import raise_if_missing_plugin_parameters, listEntraUsers
 from azure.identity import ClientSecretCredential
 
 logger = logging.getLogger(__name__)
@@ -58,6 +58,7 @@ class ListEntraUsers(Connector):
     
     def generate_rows(self, dataset_schema=None, dataset_partitioning=None, partition_id=None, records_limit = -1):
         if (records_limit > 0):
+            logger.info(f"Build sample dataset - Retrieve only {records_limit} records")
             if(records_limit >= 500):
                 page_size = 500
                 page_count = ceil(records_limit/page_size)
@@ -68,16 +69,7 @@ class ListEntraUsers(Connector):
         else:
             result = listEntraUsers(self._get_access_token())
         
-        
- 
-        for user in result:
-            user_row = user
-            
-            # Enrich data with user registered authentication methods
-            #user_row["signInActivity"] = listEntraUserSignInActivity(self._get_access_token(), user["id"])
-            if self.getAuthenticationMethods:
-                user_row["authenticationMethods"] = listEntraUserAuthenticationMethods(self._get_access_token(), user["userPrincipalName"])
-                
+        for user in result:              
             yield user
 
 
