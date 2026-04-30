@@ -56,7 +56,7 @@ input_A_dataset_df = input_A_dataset.get_dataframe()
 
 # Fill Entra ID group
 userIdsColumn = get_recipe_config()['user_id_column']
-input_A_dataset_df["authenticationMedhods"] = input_A_dataset_df.apply(lambda x: listEntraUserAuthenticationMethodsDetails(_get_access_token(), x[userIdsColumn]), axis=1)
+input_A_dataset_df["authenticationMethods"] = input_A_dataset_df.apply(lambda x: listEntraUserAuthenticationMethodsDetails(_get_access_token(), x[userIdsColumn]), axis=1)
 
 # Write recipe outputs in output dataset
 main_output_name = get_output_names_for_role('main_output')
