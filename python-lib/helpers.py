@@ -214,6 +214,29 @@ def listEntraUsers(access_token, page_size=500, page_limit=100000):
   return graph_results
 
 
+# Get a list of the group's direct members.
+# A group can have users, organizational contacts, devices, service principals and other groups as members
+def listEntraGroupMembers(access_token, group_id, pagination = True, records_limit=-1):
+  graph_results = []
+  graph_results_count = 0
+  headers = {'Authorization': 'Bearer ' + access_token}
+  
+  url = f"https://graph.microsoft.com/v1.0/groups/{group_id}/members"
+  while url and (records_limit == -1 or (records_limit > 0 and graph_results_count <= records_limit)):
+    try:
+      graph_result = requests.get(url=url, headers=headers).json()
+      graph_results.extend(graph_result['value'])
+      graph_results_count += len(graph_result['value'])
+      if (pagination):
+        url = graph_result['@odata.nextLink']
+      else:
+        url = None
+    except:
+      break
+
+  return graph_results
+
+
 def listEntraUsersAuthenticationMethods(credentials, pagination=True):
   token_result = credentials.get_token('https://graph.microsoft.com/.default')
 
