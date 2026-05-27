@@ -1,0 +1,21 @@
+{
+    "meta" : {
+        "label": "Get members of a Microsoft Entra ID group",
+        "description": "List all members of a Microsoft Entra ID group",
+        "icon": "fas fa-users"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": [
+        {
+            "name": "group_id",
+            "type": "STRING",
+            "label": "Entra ID group GUID",
+            "description": "GUID of the Microsoft Entra ID group",
+            "mandatory": true
+        }
+    ]
+}
