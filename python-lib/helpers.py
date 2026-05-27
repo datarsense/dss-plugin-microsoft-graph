@@ -308,7 +308,7 @@ def addEntraGroupMemberById(access_token, groupId, userId):
     elif graph_result.status_code == 400:
       print(f"User {userId} already exists in group {groupId}")
     else:
-      print(f"Error when trying to add user {userId} to group {groupId}")
+      print(f"Error when trying to add user {userId} to group {groupId}. Status code:{graph_result.status_code}. Graph API response: {graph_result.json()}")
       
-  except:
-    print(f"Error when trying to add user {userId} to group {groupId}")
+  except Exception as e:
+    print(f"Error when trying to add user {userId} to group {groupId}: {e}")
