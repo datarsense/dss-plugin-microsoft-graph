@@ -304,11 +304,11 @@ def addEntraGroupMemberById(access_token, groupId, userId):
   try:
     graph_result = requests.post(url=url, headers=headers, json=body)
     if graph_result.status_code == 204:
-      print(f"Successfully added user {userId} to group {groupId}")
+      print(f"Successfully added directory object {userId} to group {groupId}")
     elif graph_result.status_code == 400:
-      print(f"User {userId} already exists in group {groupId}")
+      print(f"Object {userId} already exists in group {groupId}")
     else:
-      print(f"Error when trying to add user {userId} to group {groupId}. Status code:{graph_result.status_code}. Graph API response: {graph_result.json()}")
+      print(f"Error when trying to add directory object {userId} to group {groupId}. Status code:{graph_result.status_code}. Graph API response: {graph_result.json()}")
       
   except Exception as e:
-    print(f"Error when trying to add user {userId} to group {groupId}: {e}")
+    print(f"Error when trying to add directory object {userId} to group {groupId}: {e}")
