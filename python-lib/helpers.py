@@ -41,7 +41,7 @@ def raise_if_missing_plugin_parameters(plugin_params):
 # Retry-After Header Support: If the API provides a Retry-After header (common with 429 responses), the function respects this specific delay.
 # Session Management: Utilizes requests.Session() for connection pooling, improving performance for multiple calls to the same host.
 # Clear Logging: Provides informative logs for each retry attempt and error.
-def perform_request_with_retry(method: str, url: str, access_token: str, params: dict = None, json_payload: dict = None, max_retries: int = 5, session: requests.Session = None) -> requests.Response:
+def perform_request_with_retry(method: str, url: str, access_token: str, params: dict = None, json_payload: dict = None, custom_headers: dict = None, max_retries: int = 5, session: requests.Session = None) -> requests.Response:
     """
     Performs an HTTP request with retries for throttling and transient errors.
     Uses a provided session or creates a new one.
@@ -49,6 +49,10 @@ def perform_request_with_retry(method: str, url: str, access_token: str, params:
     local_session = session or requests.Session()
     delay = 1 # Initial delay in seconds
     headers = {'Authorization': 'Bearer ' + access_token}
+    
+    # Merge custom headers if provided
+    if custom_headers and isinstance(custom_headers, dict):
+        headers.update(custom_headers)
 
     for attempt in range(max_retries):
         try:
@@ -312,3 +316,119 @@ def addEntraGroupMemberById(access_token, groupId, userId):
       
   except Exception as e:
     print(f"Error when trying to add directory object {userId} to group {groupId}: {e}")
+
+
+def queryGenericGraphAPI(access_token: str, api_endpoint: str, api_version: str = "v1.0", 
+                         http_method: str = "GET", query_params: dict = None, 
+                         request_body: dict = None, custom_headers: dict = None, 
+                         pagination_enabled: bool = True, records_limit: int = -1,
+                         max_retries: int = 5, session: requests.Session = None) -> list:
+    """
+    Generic function to query Microsoft Graph API endpoints with flexible parameters.
+    
+    Args:
+        access_token (str): Valid Microsoft Graph API access token
+        api_endpoint (str): API endpoint path (e.g., "/users", "/groups/{id}/members", "/me/drive/root/children")
+        api_version (str): API version to use ("v1.0" or "beta"), defaults to "v1.0"
+        http_method (str): HTTP method to use ("GET", "POST", "PATCH", "DELETE"), defaults to "GET"
+        query_params (dict): OData query parameters (e.g., {"$select": "id,displayName", "$filter": "..."}), optional
+        request_body (dict): JSON body for POST/PATCH requests, optional
+        custom_headers (dict): Additional HTTP headers to include, optional
+        pagination_enabled (bool): Whether to follow @odata.nextLink for pagination, defaults to True
+        records_limit (int): Maximum number of records to retrieve. -1 means unlimited, defaults to -1
+        max_retries (int): Maximum number of retry attempts for transient failures, defaults to 5
+        session (requests.Session): Reusable session object for connection pooling, optional
+    
+    Returns:
+        list: List of result objects from the API response's 'value' field
+    
+    Raises:
+        ValueError: If api_endpoint is empty or invalid
+        RuntimeError: If API request fails after max retries
+        Exception: For invalid HTTP methods or other API errors
+    """
+    if not api_endpoint or not isinstance(api_endpoint, str):
+        raise ValueError("api_endpoint must be a non-empty string")
+    
+    if api_version not in ["v1.0", "beta"]:
+        raise ValueError("api_version must be either 'v1.0' or 'beta'")
+    
+    http_method = http_method.upper()
+    if http_method not in ["GET", "POST", "PATCH", "DELETE"]:
+        raise ValueError(f"http_method must be one of: GET, POST, PATCH, DELETE (got: {http_method})")
+    
+    # Build the full URL
+    base_url = "https://graph.microsoft.com"
+    if not api_endpoint.startswith("/"):
+        api_endpoint = "/" + api_endpoint
+    url = f"{base_url}/{api_version}{api_endpoint}"
+    
+    local_session = session or requests.Session()
+    
+    graph_results = []
+    records_retrieved = 0
+    delay = 1  # Initial delay for backoff
+    
+    try:
+        while url and (records_limit == -1 or records_retrieved < records_limit):
+            try:
+                # Perform request with retry logic
+                response = perform_request_with_retry(
+                    method=http_method,
+                    url=url,
+                    access_token=access_token,
+                    params=query_params,
+                    json_payload=request_body,
+                    custom_headers=custom_headers,
+                    max_retries=max_retries,
+                    session=local_session
+                )
+                
+                graph_response = response.json()
+                
+                # Extract results from 'value' field if present
+                if 'value' in graph_response and isinstance(graph_response['value'], list):
+                    results_batch = graph_response['value']
+                    
+                    # Enforce records_limit by slicing the batch if needed
+                    if records_limit > 0:
+                        remaining_records = records_limit - records_retrieved
+                        if len(results_batch) > remaining_records:
+                            results_batch = results_batch[:remaining_records]
+                    
+                    graph_results.extend(results_batch)
+                    records_retrieved += len(results_batch)
+                    
+                    logger.info(
+                        f"Retrieved {len(results_batch)} records from {api_endpoint} "
+                        f"(total: {records_retrieved})"
+                    )
+                else:
+                    # If response doesn't have 'value' field, return entire response as single item
+                    graph_results.append(graph_response)
+                    records_retrieved += 1
+                    logger.info(f"Retrieved non-paginated response from {api_endpoint}")
+                
+                # Handle pagination
+                if pagination_enabled and '@odata.nextLink' in graph_response:
+                    if records_limit == -1 or records_retrieved < records_limit:
+                        url = graph_response['@odata.nextLink']
+                        logger.debug(f"Following pagination link for {api_endpoint}")
+                    else:
+                        url = None  # Stop pagination if we've reached records_limit
+                else:
+                    url = None  # No more pages
+                    
+            except requests.exceptions.RequestException as e:
+                logger.error(f"Failed to query {api_endpoint}: {e}")
+                raise RuntimeError(f"API request failed: {e}") from e
+            except (KeyError, ValueError) as e:
+                logger.error(f"Error parsing response from {api_endpoint}: {e}")
+                raise RuntimeError(f"Failed to parse API response: {e}") from e
+                
+    finally:
+        if not session and local_session:
+            local_session.close()
+    
+    logger.info(f"Successfully retrieved {len(graph_results)} records from {api_endpoint}")
+    return graph_results
