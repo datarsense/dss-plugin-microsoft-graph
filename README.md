@@ -21,22 +21,66 @@ A flexible, generic connector to query any Microsoft Graph API endpoint (v1.0 or
 
 For detailed usage instructions, see [Generic Microsoft Graph API Query Connector Documentation](./python-connectors/microsoft-graph-generic-api-query/README.md).
 
+### Intune Device Compliance Setting States
+Retrieves device compliance setting states from Microsoft Intune, aggregated across all deviceCompliancePolicySettingStateSummaries. Returns a single unified dataset containing compliance states for all devices, optionally filtered by specific compliance policy summaries.
+
+**Key Features:**
+- Aggregates compliance setting states from all compliance policies
+- Includes device, user, and compliance state information
+- Optional filtering by compliance policy summary IDs
+- Support for OData $select parameter to customize output fields
+- Automatic pagination for large result sets
+- Complete cross-organization compliance visibility
+
+For detailed usage instructions, see [Intune Device Compliance Setting States Connector Documentation](./python-connectors/microsoft-graph_intune-devicecompliance-settingstates/README.md).
+
 ### List Entra ID Users
 Retrieves a comprehensive list of users from Microsoft Entra ID with detailed user information including contact details, account status, sign-in activity, and more. Can be used for user auditing, access reviews, and user management workflows.
 
 For detailed usage instructions, see [List Entra ID Users Connector Documentation](./python-connectors/microsoft-graph_entra-users-list/README.md).
 
-## Plugin Configuration
-The following parameters can be configured globally:
-* **Tenant ID** : Microsoft Entra ID tenant ID (UUID format)
-* **Client ID** : Microsoft Entra ID registered application client ID
-* **Client Secret** : Microsoft Entra ID registered application client secret
+## Plugin Configuration Setup
 
-For detailed setup instructions, see the [Generic Microsoft Graph API Query Connector - Plugin Configuration Setup](./python-connectors/microsoft-graph-generic-api-query/README.md#plugin-configuration-setup) section.
+### Registering an Azure Application
+
+1. **Sign In to Azure Portal:** Go to [portal.azure.com](https://portal.azure.com)
+2. **Create Application:**
+   - Navigate to **Azure Active Directory > App registrations**
+   - Click **New registration**
+   - Enter application name (e.g., "Dataiku Intune Connector")
+   - Select **Accounts in this organizational directory only**
+   - Click **Register**
+3. **Add Client Secret:**
+   - Go to **Certificates & secrets**
+   - Click **New client secret**
+   - Enter description and expiration
+   - Copy the **Value** (this is your Client Secret)
+4. **Grant API Permissions:**
+   - Go to **API permissions**
+   - Click **Add a permission**
+   - Select **Microsoft Graph**
+   - Choose **Application permissions**
+   - Search for and select appropriate permissions
+   - Click **Grant admin consent**
+5. **Collect Credentials:**
+   - **Client ID:** From **Overview** tab
+   - **Tenant ID:** From **Overview** tab  
+   - **Client Secret:** From **Certificates & secrets** tab
+
+### Configuring the Plugin in Dataiku
+
+1. Go to **Administration > Plugins > Installed > Microsoft Graph API**
+2. Click **Settings**
+3. Fill in:
+   - **Tenant ID:** Your Azure AD tenant ID
+   - **Client ID:** Your application's client ID
+   - **Client Secret:** Your application's client secret
+4. Click **Save**
+
 
 ## Testing
 
-This plugin includes comprehensive pytest-based unit tests for the generic connector.
+This plugin includes comprehensive pytest-based unit tests for all connectors.
 
 ### Running Tests
 
@@ -50,9 +94,14 @@ This plugin includes comprehensive pytest-based unit tests for the generic conne
 pytest tests/ -v
 ```
 
-**Run specific test file:**
+**Run specific test file (Generic Connector):**
 ```bash
 pytest tests/test_generic_connector.py -v
+```
+
+**Run specific test file (Intune Compliance Connector):**
+```bash
+pytest tests/test_intune_compliance_connector.py -v
 ```
 
 **Run specific test class:**
@@ -72,18 +121,29 @@ pytest tests/ --cov=python-lib --cov=python-connectors -v
 
 ### Test Coverage
 
-The test suite includes:
-- **Parameter Validation Tests** - Verify invalid parameters are rejected with clear errors
-- **URL Construction Tests** - Ensure correct URL building for different API versions
-- **Query Parameters Tests** - Validate OData parameter passing ($select, $filter, $top, $search)
-- **Pagination Tests** - Test automatic pagination with @odata.nextLink
-- **Record Limit Tests** - Verify records_limit enforcement
-- **Custom Headers Tests** - Test custom HTTP header support
-- **Request Body Tests** - Validate POST/PATCH body handling
-- **HTTP Methods Tests** - Test all supported HTTP methods (GET, POST, PATCH, DELETE)
-- **Edge Cases Tests** - Handle empty results, malformed responses, etc.
-- **Authorization Tests** - Verify token and header handling
-- **Integration Tests** - Test complete workflows with multiple features
+**Generic Connector Tests** (`test_generic_connector.py`):
+- Parameter validation and error handling
+- URL construction for different API versions
+- OData query parameter passing ($select, $filter, $top, $search)
+- Automatic pagination with @odata.nextLink
+- Record limit enforcement
+- Custom HTTP headers support
+- POST/PATCH body handling
+- All HTTP methods (GET, POST, PATCH, DELETE)
+- Edge cases and error handling
+- Authorization header validation
+- Complete workflow integration tests
+
+**Intune Compliance Connector Tests** (`test_intune_compliance_connector.py`):
+- Output schema validation (all deviceComplianceSettingState fields)
+- Aggregation across multiple compliance policy summaries
+- Dataset coverage verification (all summaries included)
+- Optional filtering by summary IDs
+- Pagination at both summary and state levels
+- Record limit enforcement for previews
+- Field selection with $select parameter
+- Edge cases (empty summaries, non-existent IDs)
+- Integration tests with real sample data
 
 ### Test Markers
 

@@ -432,3 +432,238 @@ def queryGenericGraphAPI(access_token: str, api_endpoint: str, api_version: str 
     
     logger.info(f"Successfully retrieved {len(graph_results)} records from {api_endpoint}")
     return graph_results
+
+
+def listIntuneDeviceComplianceSettingStates(access_token, summary_ids=None, query_select=None, 
+                                            pagination=True, records_limit=-1):
+    """
+    Query Intune deviceCompliancePolicySettingStateSummaries and retrieve all deviceComplianceSettingStates.
+    
+    Returns deviceComplianceSettingState objects with the following fields:
+    - id: Unique identifier of the setting state
+    - setting: Name of the compliance setting
+    - settingName: Display name of the compliance setting
+    - deviceId: Unique identifier of the device
+    - deviceName: Name/hostname of the device
+    - userId: Unique identifier of the user
+    - userEmail: Email address of the user
+    - userName: Display name of the user
+    - userPrincipalName: User principal name (UPN)
+    - deviceModel: Model/type of the device
+    - state: Compliance state (compliant, noncompliant, notApplicable, error, etc.)
+    - complianceGracePeriodExpirationDateTime: When grace period expires (if applicable)
+    - summaryId: ID of the parent deviceCompliancePolicySettingStateSummary (added for reference)
+    
+    Args:
+        access_token (str): Valid Microsoft Graph API access token
+        summary_ids (list): List of deviceCompliancePolicySettingStateSummaryIds to filter by. 
+                           If None, retrieves all summaries.
+        query_select (str): OData $select parameter for deviceComplianceSettingStates fields
+        pagination (bool): Whether to follow pagination tokens
+        records_limit (int): Maximum number of compliance setting states to retrieve (-1 = unlimited)
+    
+    Returns:
+        list: Aggregated list of deviceComplianceSettingState objects from all queried summaries
+        
+    Raises:
+        RuntimeError: If API requests fail
+    """
+    graph_results = []
+    graph_results_count = 0
+    headers = {'Authorization': 'Bearer ' + access_token}
+    
+    try:
+        # Step 1: Get all deviceCompliancePolicySettingStateSummaries (or filter to specific IDs)
+        summaries = []
+        summaries_url = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries"
+        
+        logger.info("Retrieving device compliance policy setting state summaries...")
+        
+        while summaries_url:
+            try:
+                summaries_response = requests.get(url=summaries_url, headers=headers).json()
+                if 'value' in summaries_response:
+                    summaries.extend(summaries_response['value'])
+                
+                # Pagination for summaries
+                if pagination and '@odata.nextLink' in summaries_response:
+                    summaries_url = summaries_response['@odata.nextLink']
+                else:
+                    summaries_url = None
+            except Exception as e:
+                logger.error(f"Failed to retrieve compliance policy setting state summaries: {e}")
+                break
+        
+        # Filter summaries by IDs if provided
+        original_summary_count = len(summaries)
+        if summary_ids:
+            summaries = [s for s in summaries if s.get('id') in summary_ids]
+            logger.info(f"Filtered from {original_summary_count} to {len(summaries)} summaries matching provided IDs")
+        else:
+            logger.info(f"Retrieved {len(summaries)} compliance policy setting state summaries")
+        
+        if not summaries:
+            logger.warning("No summaries found matching criteria")
+            return graph_results
+        
+        # Step 2: For each summary, retrieve its deviceComplianceSettingStates
+        summaries_processed = 0
+        for summary in summaries:
+            summary_id = summary.get('id')
+            if not summary_id:
+                logger.warning("Summary found without ID, skipping")
+                continue
+            
+            # Build query parameters
+            query_params = {}
+            if query_select:
+                query_params['$select'] = query_select
+            
+            # Construct states URL for this summary
+            states_url = f"https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries/{summary_id}/deviceComplianceSettingStates"
+            
+            logger.debug(f"Retrieving compliance setting states for summary {summary_id}...")
+            
+            # Paginate through all states for this summary
+            while states_url and (records_limit == -1 or graph_results_count < records_limit):
+                try:
+                    states_response = requests.get(url=states_url, headers=headers, params=query_params).json()
+                    
+                    if 'value' in states_response:
+                        states_batch = states_response['value']
+                        
+                        # Enforce record limit
+                        if records_limit > 0:
+                            remaining = records_limit - graph_results_count
+                            if len(states_batch) > remaining:
+                                states_batch = states_batch[:remaining]
+                        
+                        # Add summary_id to each state for reference
+                        for state in states_batch:
+                            state['summaryId'] = summary_id
+                        
+                        graph_results.extend(states_batch)
+                        graph_results_count += len(states_batch)
+                        
+                        logger.info(
+                            f"Retrieved {len(states_batch)} compliance setting states from summary {summary_id} "
+                            f"(total across all summaries: {graph_results_count})"
+                        )
+                    
+                    # Pagination for states
+                    if pagination and '@odata.nextLink' in states_response and (records_limit == -1 or graph_results_count < records_limit):
+                        states_url = states_response['@odata.nextLink']
+                    else:
+                        states_url = None
+                        
+                except Exception as e:
+                    logger.error(f"Failed to retrieve compliance setting states for summary {summary_id}: {e}")
+                    states_url = None
+            
+            summaries_processed += 1
+            
+            # Stop processing more summaries if record limit reached
+            if records_limit > 0 and graph_results_count >= records_limit:
+                logger.info(f"Record limit of {records_limit} reached after processing {summaries_processed} of {len(summaries)} summaries")
+                break
+        
+        logger.info(f"Successfully retrieved {len(graph_results)} total compliance setting states from {summaries_processed} summaries")
+        return graph_results
+        
+    except Exception as e:
+        logger.error(f"Error retrieving device compliance setting states: {e}")
+        raise RuntimeError(f"Failed to retrieve device compliance setting states: {e}") from e
+
+
+def countIntuneDeviceComplianceSettingStates(access_token, summary_ids=None, query_select=None):
+    """
+    Count total deviceComplianceSettingStates efficiently using $count query parameter.
+    
+    Retrieves summaries first (to get IDs and filter if needed), then counts states
+    for each summary using $count=true instead of fetching all state objects.
+    This is significantly faster and requires minimal bandwidth.
+    
+    Args:
+        access_token (str): Valid Microsoft Graph API access token
+        summary_ids (list): List of deviceCompliancePolicySettingStateSummaryIds to filter by.
+                           If None, retrieves all summaries.
+        query_select (str): OData $select parameter (unused for count, included for API consistency)
+    
+    Returns:
+        int: Total count of deviceComplianceSettingStates across all queried summaries
+        
+    Raises:
+        RuntimeError: If API requests fail
+    """
+    headers = {'Authorization': 'Bearer ' + access_token}
+    total_count = 0
+    
+    try:
+        # Step 1: Get all deviceCompliancePolicySettingStateSummaries (or filter to specific IDs)
+        summaries = []
+        summaries_url = "https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries"
+        
+        logger.info("Retrieving device compliance policy setting state summaries for counting...")
+        
+        while summaries_url:
+            try:
+                summaries_response = requests.get(url=summaries_url, headers=headers).json()
+                if 'value' in summaries_response:
+                    summaries.extend(summaries_response['value'])
+                
+                # Pagination for summaries
+                if '@odata.nextLink' in summaries_response:
+                    summaries_url = summaries_response['@odata.nextLink']
+                else:
+                    summaries_url = None
+            except Exception as e:
+                logger.error(f"Failed to retrieve compliance policy setting state summaries: {e}")
+                raise RuntimeError(f"Failed to retrieve summaries for counting: {e}") from e
+        
+        # Filter summaries by IDs if provided
+        original_summary_count = len(summaries)
+        if summary_ids:
+            summaries = [s for s in summaries if s.get('id') in summary_ids]
+            logger.info(f"Filtered from {original_summary_count} to {len(summaries)} summaries for counting")
+        else:
+            logger.info(f"Retrieved {len(summaries)} compliance policy setting state summaries for counting")
+        
+        if not summaries:
+            logger.warning("No summaries found matching criteria")
+            return 0
+        
+        # Step 2: For each summary, use $count=true to get count without fetching data
+        for summary in summaries:
+            summary_id = summary.get('id')
+            if not summary_id:
+                logger.warning("Summary found without ID, skipping")
+                continue
+            
+            # Construct count URL for this summary
+            count_url = f"https://graph.microsoft.com/v1.0/deviceManagement/deviceCompliancePolicySettingStateSummaries/{summary_id}/deviceComplianceSettingStates"
+            
+            try:
+                # Use $count=true to get count as integer string
+                count_response = requests.get(
+                    url=count_url,
+                    headers=headers,
+                    params={'$count': 'true'}
+                )
+                count_response.raise_for_status()
+                
+                # $count=true returns integer count as text
+                summary_count = int(count_response.text)
+                total_count += summary_count
+                
+                logger.debug(f"Summary {summary_id}: {summary_count} compliance setting states")
+                
+            except Exception as e:
+                logger.error(f"Failed to count compliance setting states for summary {summary_id}: {e}")
+                raise RuntimeError(f"Failed to count states for summary {summary_id}: {e}") from e
+        
+        logger.info(f"Total compliance setting states count: {total_count} from {len(summaries)} summaries")
+        return total_count
+        
+    except Exception as e:
+        logger.error(f"Error counting device compliance setting states: {e}")
+        raise RuntimeError(f"Failed to count device compliance setting states: {e}") from e

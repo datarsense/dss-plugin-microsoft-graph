@@ -1,0 +1,28 @@
+{
+    "meta": {
+        "label": "List Intune device compliance setting states",
+        "description": "Retrieve device compliance setting states from Microsoft Intune, aggregated from all deviceCompliancePolicySettingStateSummaries or optionally filtered by summary IDs",
+        "icon": "fas fa-check-circle"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": [
+        {
+            "name": "summary_ids",
+            "label": "Device Compliance Summary IDs (Optional)",
+            "type": "TEXTAREA",
+            "mandatory": false,
+            "description": "List of deviceCompliancePolicySettingStateSummaryIds to filter by. Enter one ID per line. If left empty, all summaries and their setting states will be retrieved."
+        },
+        {
+            "name": "query_select",
+            "label": "$select - Select Fields (Optional)",
+            "type": "STRING",
+            "mandatory": false,
+            "description": "OData $select parameter: comma-separated list of fields to include in deviceComplianceSettingStates (e.g., 'id,setting,settingName,deviceName,state'). If empty, all fields are returned."
+        }
+    ]
+}
