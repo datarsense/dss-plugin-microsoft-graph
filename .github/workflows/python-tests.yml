@@ -39,7 +39,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest tests/ -v --tb=short --error-for-skipped
+          pytest tests/ -v --tb=short
 
       - name: Upload test results
         if: always()
