@@ -413,6 +413,8 @@ def queryGenericGraphAPI(access_token: str, api_endpoint: str, api_version: str 
                 if pagination_enabled and '@odata.nextLink' in graph_response:
                     if records_limit == -1 or records_retrieved < records_limit:
                         url = graph_response['@odata.nextLink']
+                        query_params = None
+                        request_body = None
                         logger.debug(f"Following pagination link for {api_endpoint}")
                     else:
                         url = None  # Stop pagination if we've reached records_limit
