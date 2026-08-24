@@ -34,6 +34,11 @@ Retrieves device compliance setting states from Microsoft Intune, aggregated acr
 
 For detailed usage instructions, see [Intune Device Compliance Setting States Connector Documentation](./python-connectors/microsoft-graph_intune-devicecompliance-settingstates/README.md).
 
+### Intune Device Health Script Device Run States
+Retrieves the current device run states for a specified Microsoft Intune device health script, including detection, remediation, script output, and expanded managed-device information.
+
+For detailed usage instructions, see [Intune Device Health Script Device Run States Connector Documentation](./python-connectors/microsoft-graph_intune-deviceHealthScripts-deviceRunStates/README.md).
+
 ### List Entra ID Users
 Retrieves a comprehensive list of users from Microsoft Entra ID with detailed user information including contact details, account status, sign-in activity, and more. Can be used for user auditing, access reviews, and user management workflows.
 

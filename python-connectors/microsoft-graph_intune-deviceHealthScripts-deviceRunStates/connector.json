@@ -1,0 +1,21 @@
+{
+    "meta" : {
+        "label": "Get Intune device health script device run states",
+        "description": "Get Intune device health script device run states",
+        "icon": "fas fa-desktop"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": [
+        {
+            "name": "deviceHealthScriptId",
+            "type": "STRING",
+            "label": "Device Health Script GUID",
+            "description": "GUID of the Microsoft Intune Device Health Script",
+            "mandatory": true
+        }
+    ]
+}

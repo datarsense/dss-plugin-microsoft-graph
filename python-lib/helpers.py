@@ -669,3 +669,49 @@ def countIntuneDeviceComplianceSettingStates(access_token, summary_ids=None, que
     except Exception as e:
         logger.error(f"Error counting device compliance setting states: {e}")
         raise RuntimeError(f"Failed to count device compliance setting states: {e}") from e
+
+
+def listIntuneDeviceHealthScriptDeviceRunStates(access_token, deviceHealthScriptId, query_select=None, 
+                                            pagination=True, records_limit=-1):
+    """
+    Retrieve device run states for a specific Intune device health script.
+
+    Args:
+        access_token (str): A valid Microsoft Graph API access token.
+        deviceHealthScriptId (str): The ID of the device health script.
+        query_select (str): An OData ``$select`` parameter. This parameter is
+            currently not used by the request.
+        pagination (bool): Whether to follow pagination links.
+        records_limit (int): The maximum number of device run states to
+            retrieve. Use ``-1`` for no limit.
+
+    Returns:
+        list: A list of deviceHealthScriptDeviceStates objects.
+
+    Raises:
+        RuntimeError: If an API request or response parsing operation fails.
+    """
+    graph_results = []
+    graph_results_count = 0
+    headers = {'Authorization': 'Bearer ' + access_token}
+    
+    url = f"https://graph.microsoft.com/beta/deviceManagement/deviceHealthScripts/{deviceHealthScriptId}/deviceRunStates?$expand=managedDevice"
+    
+    logger.info("Retrieving device health script device run states...")
+    
+    while url and (records_limit == -1 or (records_limit > 0 and graph_results_count <= records_limit)):
+        try:
+            response = requests.get(url=url, headers=headers).json()
+            if 'value' in response:
+                graph_results.extend(response['value'])
+                graph_results_count += len(response['value'])
+            
+            if pagination and '@odata.nextLink' in response:
+                url = response['@odata.nextLink']
+            else:
+                url = None
+        except Exception as e:
+            logger.error(f"Failed to retrieve device health script device run states: {e}")
+            raise RuntimeError(f"Failed to retrieve device health script device run states: {e}") from e
+    
+    return graph_results
