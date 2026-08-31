@@ -1,0 +1,107 @@
+{
+    "meta": {
+        "label": "Query Generic Microsoft Graph API",
+        "description": "Generic connector to query any Microsoft Graph API endpoint (v1.0 or beta). Supports flexible parameters including HTTP method, OData query parameters, custom headers, and request body for POST/PATCH operations.",
+        "icon": "fas fa-search"
+    },
+
+    "readable": true,
+    "writable": false,
+    "supportAppend": false,
+    
+    "params": [
+        {
+            "name": "api_version",
+            "label": "API Version",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "v1.0",
+                    "label": "v1.0 (Production)"
+                },
+                {
+                    "value": "beta",
+                    "label": "beta (Preview)"
+                }
+            ],
+            "mandatory": true,
+            "defaultValue": "v1.0",
+            "description": "Microsoft Graph API version to use"
+        },
+        {
+            "name": "api_endpoint",
+            "label": "API Endpoint",
+            "type": "STRING",
+            "mandatory": true,
+            "description": "API endpoint path (e.g., /users, /groups/{id}/members, /me/drive/root/children). Do not include the base URL or API version."
+        },
+        {
+            "name": "http_method",
+            "label": "HTTP Method",
+            "type": "SELECT",
+            "selectChoices": [
+                {
+                    "value": "GET",
+                    "label": "GET (Retrieve data)"
+                },
+                {
+                    "value": "POST",
+                    "label": "POST (Create/Execute)"
+                },
+                {
+                    "value": "PATCH",
+                    "label": "PATCH (Update)"
+                },
+                {
+                    "value": "DELETE",
+                    "label": "DELETE (Remove)"
+                }
+            ],
+            "mandatory": false,
+            "defaultValue": "GET",
+            "description": "HTTP method for the API request"
+        },
+        {
+            "name": "query_select",
+            "label": "$select - Select Fields",
+            "type": "STRING",
+            "mandatory": false,
+            "description": "OData $select parameter: comma-separated list of fields to include (e.g., 'id,displayName,mail')"
+        },
+        {
+            "name": "query_filter",
+            "label": "$filter - Filter Expression",
+            "type": "STRING",
+            "mandatory": false,
+            "description": "OData $filter parameter: filter condition (e.g., \"startswith(displayName, 'John')\" or \"accountEnabled eq true\")"
+        },
+        {
+            "name": "query_top",
+            "label": "$top - Max Records Per Request",
+            "type": "INT",
+            "mandatory": false,
+            "description": "OData $top parameter: maximum number of records to retrieve per API request (max 999)"
+        },
+        {
+            "name": "query_search",
+            "label": "$search - Search Term",
+            "type": "STRING",
+            "mandatory": false,
+            "description": "OData $search parameter: search for text content (only works on specific endpoints that support it)"
+        },
+        {
+            "name": "custom_headers",
+            "label": "Custom HTTP Headers",
+            "type": "STRING",
+            "mandatory": false,
+            "description": "JSON object with additional HTTP headers (e.g., {\"Prefer\": \"outlook.timezone=UTC\"})"
+        },
+        {
+            "name": "request_body",
+            "label": "Request Body (POST/PATCH)",
+            "type": "STRING",
+            "mandatory": false,
+            "description": "JSON body for POST or PATCH requests. Leave empty for GET/DELETE requests (e.g., {\"displayName\": \"New Name\"})"
+        }
+    ]
+}
